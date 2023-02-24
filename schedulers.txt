@@ -1,0 +1,3 @@
+
+<!-- <scheduler>https://boinc.loda-lang.org/loda_cgi/cgi</scheduler> -->"
+<link rel="boinc_scheduler" href="https://boinc.loda-lang.org/loda_cgi/cgi">

@@ -1,0 +1,16 @@
+<version>
+   <file>
+      <physical_name>WRAPPER_PHYSICAL_NAME</physical_name>
+      <main_program/>
+   </file>
+   <file>
+      <physical_name>LODA_PHYSICAL_NAME</physical_name>
+      <logical_name>loda</logical_name>
+   </file>
+   <file>
+      <physical_name>JOB_PHYSICAL_NAME</physical_name>
+      <logical_name>job.xml</logical_name>
+   </file>
+   <needs_network/>
+   <is_wrapper/>
+</version>
