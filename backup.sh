@@ -11,7 +11,7 @@ if ! docker exec loda-boinc test -d /home/boincadm/projects; then
 fi
 
 ID=$(date +%y%m%d-%H%M%S)
-BACKUP_DIR=backups/$ID
+BACKUP_DIR=$HOME/backups/$ID
 
 if [ -d "$BACKUP_DIR" ]; then
   echo "Cannot backup: $BACKUP_DIR exists already"
@@ -31,9 +31,9 @@ docker cp loda-boinc:/etc/letsencrypt.tar.gz $BACKUP_DIR
 docker cp loda-boinc:/loda.sql.gz $BACKUP_DIR
 docker exec loda-boinc rm /home/boincadm/projects.tar.gz /loda.sql.gz
 
-while [ "$(ls -1 backups | wc -l)" -gt 3 ]; do
+while [ "$(ls -1 $HOME/backups | wc -l)" -gt 3 ]; do
   echo
   echo "### CLEAN UP ###"
-  LAST=$(ls -1 backups | sort | head -n 1)
-  rm -rf backups/$LAST
+  LAST=$(ls -1 $HOME/backups | sort | head -n 1)
+  rm -rf $HOME/backups/$LAST
 done

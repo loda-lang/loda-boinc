@@ -18,12 +18,13 @@ fi
 echo
 echo "### START CONTAINER ###"
 docker run -d --rm --name loda-boinc --hostname lodaboinc -p 80:80 -p 443:443 loda-boinc:latest
-sleep 3
+sleep 10
 
 # check status
 echo
 echo "### CHECK STATUS ###"
 docker exec loda-boinc supervisorctl status
+sleep 10
 
 # create database user
 echo
@@ -34,8 +35,8 @@ docker exec loda-boinc mysql -e "GRANT ALL ON *.* TO 'boincadm'@'localhost';"
 
 # get last backup id
 BACKUP_ID=
-if [ -d "backups" ]; then
-  BACKUP_ID=$(ls -1 backups | sort | tail -n 1)
+if [ -d "$HOME/backups" ]; then
+  BACKUP_ID=$(ls -1 "$HOME/backups" | sort | tail -n 1)
 fi
 
 # loda project root
@@ -52,7 +53,7 @@ if [ -n "$BACKUP_ID" ]; then
   echo
   echo "### RESTORE ###"
   echo
-  BACKUP_DIR=backups/$BACKUP_ID
+  BACKUP_DIR=$HOME/backups/$BACKUP_ID
   docker cp $BACKUP_DIR/projects.tar.gz loda-boinc:/home/boincadm/
   docker cp $BACKUP_DIR/apache2.tar.gz loda-boinc:/etc/
   docker cp $BACKUP_DIR/letsencrypt.tar.gz loda-boinc:/etc/
