@@ -25,6 +25,10 @@ $dirs = array_diff(scandir($path), array('.', '..'));
 echo "<h1>Logs</h1>";
 
 $s = "$user->name";
+if (isset($_GET['s'])) {
+  $s = $_GET['s'];
+}
+
 foreach ($dirs as $d) {
   $files = array_diff(scandir("$path/$d"), array('.', '..'));
   foreach ($files as $f) {
@@ -33,6 +37,8 @@ foreach ($dirs as $d) {
     if (strpos($c, $s) !== false) {
       echo "<h2>$f</h2>\n";
       echo "<pre>$c</pre>\n";
+      ob_flush();
+      flush();
     }
   }
 }
