@@ -12,7 +12,6 @@ more efficient algorithms for a wide range of non-trivial integer sequences.
 The chart shows of the number of programs since the start of the project.
 You can see live stats of the program mining on our
 <a target="_blank" href="http://dashboard.loda-lang.org/grafana/">Grafana dashboard</a>.
-Live updates on new findings are published by <a target="_blank" href="https://twitter.com/lodaminer">@lodaminer</a> on Twitter.
 </p>
 <p>
 We honor your contributions to the project: your name will be included in the
@@ -21,7 +20,7 @@ We honor your contributions to the project: your name will be included in the
 <p>
 For help and discussions, 
 you can contact us in our <a href="forum_help_desk.php">forum</a>
-or join us on <a target="_blank" href="https://loda-lang.slack.com/">Slack</a>.
+or join us on <a target="_blank" href="https://loda-lang.org/discord">Discord</a>.
 </p>
 
 <p>

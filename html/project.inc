@@ -163,7 +163,6 @@ function project_navbar(
             array(tra("CPU models"), $url_prefix."cpu_list.php"),
             array(tra("Computer types"), $url_prefix."host_stats.php"),
             array(tra("Dashboard"), "http://dashboard.loda-lang.org/grafana/?orgId=1&refresh=1m"),
-            array(tra("Tweets"), "https://twitter.com/lodaminer"),
         );
         if (defined('REMOTE_JOB_SUBMISSION') && REMOTE_JOB_SUBMISSION) {
             if ($user && BoincUserSubmit::lookup_userid($user->id)) {
@@ -180,7 +179,7 @@ function project_navbar(
         // array(tra("Profiles"), $url_prefix."profile_menu.php"),
         array(tra("Preferences"), $url_prefix."edit_forum_preferences_form.php"),
         array(tra("User search"), $url_prefix."user_search.php"),
-        array(tra("Slack workspace"), "https://loda-lang.slack.com/"),
+        array(tra("Discord"), "https://loda-lang.org/discord"),
         // array(tra("User of the day"), $url_prefix."uotd.php"),
         // array(tra("Certificate"), $url_prefix.cert_filename(), "", "_blank"),
     ));
