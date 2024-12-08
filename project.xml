@@ -13,6 +13,10 @@
         <user_friendly_name>Intel 64-bit Mac OS 10.5 or later</user_friendly_name>
     </platform>
     <platform>
+        <name>arm64-apple-darwin</name>
+        <user_friendly_name>Mac OS running on ARM</user_friendly_name>
+    </platform>
+    <platform>
         <name>windows_x86_64</name>
         <user_friendly_name>Microsoft Windows running on an AMD x86_64 or Intel EM64T CPU</user_friendly_name>
     </platform>

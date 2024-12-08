@@ -104,5 +104,6 @@ echo
 echo "### PREPARE APP VERSIONS ###"
 make_version "windows_x86_64" "loda-windows.exe" "loda-$APP_VERSION-windows.exe" "26016_windows_x86_64"
 make_version "x86_64-pc-linux-gnu" "loda-linux-x86" "loda-$APP_VERSION-linux-x86" "26015_x86_64-pc-linux-gnu"
-make_version "x86_64-apple-darwin" "loda-macos" "loda-$APP_VERSION-macos" "26017_universal-apple-darwin"
+make_version "x86_64-apple-darwin" "loda-macos-x86" "loda-$APP_VERSION-macos-x86" "26017_universal-apple-darwin"
+make_version "arm64-apple-darwin" "loda-macos-arm64" "loda-$APP_VERSION-macos-arm64" "26017_universal-apple-darwin"
 make_version "aarch64-unknown-linux-gnu" "loda-linux-arm64" "loda-$APP_VERSION-linux-arm64" "linux_arm64_26018"
