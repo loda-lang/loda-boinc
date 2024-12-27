@@ -19,11 +19,17 @@ if [ -d "$BACKUP_DIR" ]; then
 fi
 
 echo
-echo "### BACKUP ###"
+echo "### BACKUP FILES ###"
 docker exec -w /home/boincadm loda-boinc sudo -u boincadm -H tar -zcf projects.tar.gz projects
 docker exec -w /etc loda-boinc tar -zcf apache2.tar.gz apache2
 docker exec -w /etc loda-boinc tar -zcf letsencrypt.tar.gz letsencrypt
+
+echo
+echo "### BACKUP DATABASE ###"
 docker exec loda-boinc bash -c "mysqldump loda | gzip > /loda.sql.gz"
+
+echo
+echo "### COPY BACKUP ###"
 mkdir -p $BACKUP_DIR
 docker cp loda-boinc:/home/boincadm/projects.tar.gz $BACKUP_DIR
 docker cp loda-boinc:/etc/apache2.tar.gz $BACKUP_DIR
