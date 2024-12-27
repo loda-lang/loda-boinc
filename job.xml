@@ -3,7 +3,7 @@
         <application>loda</application>
         <stdout_filename>out.txt</stdout_filename>
         <stderr_filename>err.txt</stderr_filename>
-        <command_line>boinc -H 2</command_line>
+        <command_line>boinc -H 4</command_line>
         <fraction_done_filename>fraction_done</fraction_done_filename>
         <checkpoint_filename>checkpoint</checkpoint_filename>
         <setenv>PROJECT_DIR=$PROJECT_DIR</setenv>
