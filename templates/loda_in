@@ -13,5 +13,6 @@
     <rsc_fpops_est>7.2e13</rsc_fpops_est>
     <rsc_fpops_bound>2e14</rsc_fpops_bound>
     <rsc_memory_bound>1073741824</rsc_memory_bound>
+    <rsc_disk_bound>2147483648</rsc_disk_bound>
     <delay_bound>259200</delay_bound>
 </workunit>
