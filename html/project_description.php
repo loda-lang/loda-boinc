@@ -11,7 +11,7 @@ more efficient algorithms for a wide range of non-trivial integer sequences.
 <p>
 The chart shows of the number of programs since the start of the project.
 You can see live stats of the program mining on our
-<a target="_blank" href="http://dashboard.loda-lang.org/grafana/">Grafana dashboard</a>.
+<a target="_blank" href="https://dashboard.loda-lang.org/grafana/">Grafana dashboard</a>.
 </p>
 <p>
 We honor your contributions to the project: your name will be included in the

@@ -162,7 +162,7 @@ function project_navbar(
             array(tra("Applications"), $url_prefix."apps.php"),
             array(tra("CPU models"), $url_prefix."cpu_list.php"),
             array(tra("Computer types"), $url_prefix."host_stats.php"),
-            array(tra("Dashboard"), "http://dashboard.loda-lang.org/grafana/?orgId=1&refresh=1m"),
+            array(tra("Dashboard"), "https://dashboard.loda-lang.org/grafana/?orgId=1&refresh=1m"),
         );
         if (defined('REMOTE_JOB_SUBMISSION') && REMOTE_JOB_SUBMISSION) {
             if ($user && BoincUserSubmit::lookup_userid($user->id)) {
