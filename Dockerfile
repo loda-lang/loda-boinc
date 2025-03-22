@@ -17,6 +17,7 @@ RUN apt update && \
     libapache2-mod-php \
     libcurl4-gnutls-dev \
     libssl-dev \
+    logrotate \
     m4 \
     mc \
     make \
