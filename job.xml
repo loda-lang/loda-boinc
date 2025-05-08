@@ -8,5 +8,6 @@
         <checkpoint_filename>checkpoint</checkpoint_filename>
         <setenv>PROJECT_DIR=$PROJECT_DIR</setenv>
         <time_limit>36000</time_limit>
+        <multi_process/>
     </task>
 </job_desc>
