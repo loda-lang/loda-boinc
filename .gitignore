@@ -1,3 +1,5 @@
 .tags
 .vscode
+.DS_Store
 /backups
+/openapi.v2.yaml
