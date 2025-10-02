@@ -31,36 +31,6 @@ if (!$users_per_page) {
 }
 define ('ITEM_LIMIT', 10000);
 
-// Fetch submitter stats from LODA API and cache them
-function get_submitter_stats() {
-    $cache_key = "submitter_stats";
-    $cached = get_cached_data(TOP_PAGES_TTL, $cache_key);
-    if ($cached) {
-        $submitters = unserialize($cached);
-    } else {
-        $url = "https://api.loda-lang.org/v2/stats/submitters";
-        $opts = ["http" => ["method" => "GET", "timeout" => 5]];
-        $context = stream_context_create($opts);
-        $json = @file_get_contents($url, false, $context);
-        if ($json === false) {
-            $submitters = [];
-        } else {
-            $submitters = json_decode($json, true);
-        }
-        set_cached_data(TOP_PAGES_TTL, serialize($submitters), $cache_key);
-    }
-    // Map submitter name to numPrograms
-    $map = [];
-    foreach ($submitters as $s) {
-        if (isset($s['name']) && isset($s['numPrograms'])) {
-            $map[$s['name']] = $s['numPrograms'];
-        }
-    }
-    return $map;
-}
-
-$submitter_programs = get_submitter_stats();
-
 function get_top_participants($offset, $sort_by) {
     global $users_per_page, $submitter_programs;
     if ($sort_by == "mined_programs") {
