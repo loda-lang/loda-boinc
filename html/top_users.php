@@ -127,9 +127,9 @@ function user_table_start($sort_by) {
 
 function show_user_row($user, $i) {
     global $submitter_programs;
-    $numPrograms = "";
+    $numPrograms = 0;
     if (isset($user->name) && isset($submitter_programs[$user->name])) {
-        $numPrograms = $submitter_programs[$user->name];
+        $numPrograms = (int)$submitter_programs[$user->name];
     }
     echo "
         <tr>
@@ -137,7 +137,7 @@ function show_user_row($user, $i) {
         <td>", user_links($user, BADGE_HEIGHT_MEDIUM), "</td>
         <td align=right>", format_credit_large($user->expavg_credit), "</td>
         <td align=right>", format_credit_large($user->total_credit), "</td>
-        <td align=right>", htmlspecialchars($numPrograms), "</td>
+        <td align=right>", format_credit_large($numPrograms), "</td>
         <td>", $user->country, "</td>
         <td>", time_str($user->create_time),"</td>
         </tr>
