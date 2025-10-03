@@ -143,9 +143,48 @@ function total_posts($user) {
     return BoincPost::count("user=$user->id");
 }
 
+// Fetch submitter stats from LODA API and cache them
+function get_submitter_stats() {
+    $cache_key = "submitter_stats";
+    $cached = get_cached_data(TOP_PAGES_TTL, $cache_key);
+    if ($cached) {
+        $submitters = unserialize($cached);
+    } else {
+        $url = "https://api.loda-lang.org/v2/stats/submitters";
+        $opts = ["http" => ["method" => "GET", "timeout" => 5]];
+        $context = stream_context_create($opts);
+        $json = @file_get_contents($url, false, $context);
+        if ($json === false) {
+            $submitters = [];
+        } else {
+            $submitters = json_decode($json, true);
+        }
+        set_cached_data(TOP_PAGES_TTL, serialize($submitters), $cache_key);
+    }
+    // Map submitter name to numPrograms
+    $map = [];
+    foreach ($submitters as $s) {
+        if (isset($s['name']) && isset($s['numPrograms'])) {
+            $map[$s['name']] = $s['numPrograms'];
+        }
+    }
+    return $map;
+}
+
 function show_credit($user) {
     row2(tra("Total credit"), format_credit_large($user->total_credit));
     row2(tra("Recent average credit"), format_credit($user->expavg_credit));
+
+    $numPrograms = 0;
+    
+    global $submitter_programs;
+    if (!isset($submitter_programs)) $submitter_programs = get_submitter_stats();
+    if (isset($user->name) && isset($submitter_programs[$user->name])) {
+        $numPrograms = (int)$submitter_programs[$user->name];
+    }
+
+    row2(tra("Mined programs"), format_credit_large($numPrograms));
+
     if (function_exists("project_user_credit")) {
         project_user_credit($user);
     }
@@ -283,7 +322,7 @@ function show_user_info_private($user) {
             tra("Account keys"),
             "<a href=\"weak_auth.php\">".tra("View")."</a>"
         );
-        
+
         require_once("../inc/account_ownership.inc");
         if (file_exists($account_ownership_private_key_file_path)) {
           // If the server has keys configured show the account ownership form
