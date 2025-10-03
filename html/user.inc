@@ -41,7 +41,6 @@ function get_other_projects($user) {
     $cacheddata = get_cached_data(REMOTE_PROJECTS_TTL, $url);
     if ($cacheddata) {
         $remote = unserialize($cacheddata);
-        if (!$remote) $remote = [];
     } else {
         // Fetch the XML, use curl if fopen() is disallowed
         //
@@ -78,14 +77,18 @@ function get_other_projects($user) {
         // auto-cast the project list to an array of stdClass projects
         //
         $remote = @json_decode(json_encode((array)$xml_object))->project;
-        if (!$remote) $remote = [];
-        if (!is_array($remote)) {
-            $remote = [$remote];
+        if (!$remote) {
+            $user->projects = null;
+            return $user;
+        }
+        if (count($remote) == 1) {
+            $remote = array($remote);
         }
 
         // Cache the results
         set_cached_data(REMOTE_PROJECTS_TTL, serialize($remote), $url);
     }
+
     $user->projects = $remote;
     return $user;
 }
@@ -94,12 +97,7 @@ function show_project($project) {
     if ($project->url == "http://www.worldcommunitygrid.org/") {
         $x = $project->name;
     } else {
-        $x = sprintf(
-            '<a href="%sshow_user.php?userid=%d">%s</a>',
-            $project->url,
-            $project->id,
-            $project->name
-        );
+        $x = "<a href=\"$project->url"."show_user.php?userid=$project->id\">$project->name</a>";
     }
     echo "<tr>
         <td>$x</td>
@@ -121,19 +119,10 @@ function show_other_projects($user, $personal) {
 
     usort($user->projects, "cmp");
     if ($personal) {
-        $t  = tra("Projects in which you are participating");
+        echo "<h3>".tra("Projects in which you are participating")."</h3>";
     } else {
-        $t = tra("Projects in which %1 is participating", $user->name);
+        echo "<h3>".tra("Projects in which %1 is participating", $user->name)."</h3>";
     }
-    panel(
-        $t,
-        function() use ($user) {
-            show_other_projects_aux($user);
-        }
-    );
-}
-
-function show_other_projects_aux($user) {
     start_table('table-striped');
     row_heading_array(
         array(
@@ -187,14 +176,14 @@ $submitter_programs = get_submitter_stats();
 function show_credit($user) {
     row2(tra("Total credit"), format_credit_large($user->total_credit));
     row2(tra("Recent average credit"), format_credit($user->expavg_credit));
-    
+
     $numPrograms = 0;
     if (isset($user->name) && isset($submitter_programs[$user->name])) {
         $numPrograms = (int)$submitter_programs[$user->name];
     }
-    
+
     row2(tra("Mined programs"), format_credit_large($numPrograms));
-    
+
     if (function_exists("project_user_credit")) {
         project_user_credit($user);
     }
@@ -205,6 +194,11 @@ require_once("../inc/stats_sites.inc");
 //
 function show_user_stats_private($user) {
     global $cpid_stats_sites;
+
+    if (NO_COMPUTING && NO_STATS && NO_HOSTS) {
+        return;
+    }
+    row1(tra("Computing"));
 
     if (!NO_STATS) {
         show_credit($user);
@@ -234,6 +228,7 @@ function show_user_stats_private($user) {
         }
         $x .= ' &middot; <a href="cert_all.php">'.tra("Cross-project").'</a>';
         row2(tra("Certificate"), $x);
+        row2(tra("Stats on your cell phone"), url_base()."userw.php?id=$user->id");
     }
 }
 
@@ -245,24 +240,12 @@ function notify_description($notify) {
         return friend_notify_accept_web_line($notify);
     case NOTIFY_PM:
         return pm_web_line($notify);
-    case NOTIFY_SUBSCRIBED_THREAD:
-        return subscribed_thread_web_line($notify);
-    case NOTIFY_SUBSCRIBED_FORUM:
-        return subscribed_forum_web_line($notify);
+    case NOTIFY_SUBSCRIBED_POST:
+        return subscribed_post_web_line($notify);
     }
     return null;
 }
 
-// a string that can be used to authenticate some operations,
-// but can't be used to log in to the account
-// (e.g. can't be used to change email addr or passwd)
-//
-// this is a function of
-// - authenticator (never changes)
-// - user ID (never changes)
-// - password
-// - email addr
-//
 function weak_auth($user) {
     $x = md5($user->authenticator.$user->passwd_hash);
     return "{$user->id}_$x";
@@ -275,8 +258,6 @@ function weak_auth($user) {
 // it to a canonical form, with the protocol prefix.
 //
 function normalize_user_url($url) {
-    $url = sanitize_user_url($url);
-    if (!$url) return '';
     $x = strtolower($url);
     if (substr($x, 0, 7) == 'http://') {
         return 'http://'.substr($url, 7);
@@ -300,12 +281,11 @@ function show_user_info_private($user) {
         }
         row2(tra("Email address"), $email_text);
     }
-    if (USER_URL && $user->url) {
+    if (USER_URL) {
+        if (strlen($user->url)) {
         $u = normalize_user_url($user->url);
-        row2(
-            tra("URL"),
-            $u?sprintf('<a href="%s">%s</a>', $u, $u):tra('Invalid URL')
-        );
+            row2(tra("URL"), sprintf('<a href="%s">%s</a>', $u, $u));
+    }
     }
     if (USER_COUNTRY) {
         row2(tra("Country"), $user->country);
@@ -335,9 +315,7 @@ function show_user_info_private($user) {
             .$delete_account_str
         );
     }
-    if (!UNIQUE_USER_NAME) {
         row2(tra("User ID")."<br/><p class=\"small\">".tra("Used in community functions")."</p>", $user->id);
-    }
     if (!NO_COMPUTING) {
         row2(
             tra("Account keys"),
@@ -357,6 +335,7 @@ function show_user_info_private($user) {
 }
 
 function show_preference_links() {
+    row1("<a name=\"prefs\"></a>".tra("Preferences"));
     if (!NO_GLOBAL_PREFS) {
         row2(
             tra("When and how BOINC uses your computer"),
@@ -371,28 +350,13 @@ function show_preference_links() {
             "<a href=\"prefs.php?subset=project\">".tra("%1 preferences", PROJECT)."</a>"
         );
     }
-    if (parse_bool(get_config(), 'keyword_sched')) {
-        row2(
-            tra('What types of jobs to run'),
-            sprintf('<a href=kw_prefs.php>%s</a>',
-                tra('Science and location preferences')
-            )
-        );
     }
-}
 
-// return string describing a friend:
-// their name, and profile picture if it exists
-//
 function friend_links($user) {
-    $x = sprintf(
-        '<a href="%s%s?userid=%d" style="%s">%s</a>',
-        url_base(),
-        SHOW_USER_PAGE,
-        $user->id,
-        'vertical-align:top',
-        $user->name
-    );
+    if (is_banished($user)) {
+        return "";
+    }
+    $x = "<table height=\"100\" width=\"150\" border=\"0\" cellpadding=\"4\"><tr><td class=\"friend\">";
     if ($user->has_profile) {
         $profile = BoincProfile::lookup_fields("has_picture", "userid=$user->id");
         if ($profile && $profile->has_picture) {
@@ -400,19 +364,15 @@ function friend_links($user) {
         } else {
             $img_url = url_base()."img/head_20.png";
         }
+        $title = tra("View the profile of %1", $user->name);
         $alt = tra("Profile");
-        $x .= sprintf(
-            '<a href="%sview_profile.php?userid=%d"><img title="%s" src="%s" alt="%s"></a><br>',
-            url_base(),
-            $user->id,
-            tra("View the profile of %1", $user->name),
-            $img_url,
-            tra("Profile")
-        );
+        $x .= ' <a href="'.url_base().'view_profile.php?userid='.$user->id.'"><img title="'.$title.'" src="'.$img_url.'" alt="'.$alt.'"></a><br>';
     }
+    $x .= " <a href=\"".url_base()."show_user.php?userid=".$user->id."\">".$user->name."</a>";
     if (function_exists("project_user_links")) {
         $x .= project_user_links($user);
     }
+    $x .= "</td></tr></table>\n";
     return $x;
 }
 
@@ -421,34 +381,20 @@ function friend_links($user) {
 // if $name_limit, limit name to N chars
 //
 function user_links($user, $badge_height=0, $name_limit=0) {
-    if (!$user) {
-        error_log("user_links(): null arg\n");
-        return;
-    }
     BoincForumPrefs::lookup($user);
+    if (is_banished($user)) {
+        return "(banished: ID $user->id)";
+    }
     $x = "";
     if ($user->has_profile) {
         $img_url = url_base()."img/head_20.png";
-        $x .= sprintf(
-            ' <a href="%s%s?userid=%d"><img title="View the profile of %s" src="%s" alt="Profile"></a>',
-            url_base(),
-            'view_profile.php',
-            $user->id,
-            $user->name,
-            $img_url
-        );
+        $x .= ' <a href="'.url_base().'view_profile.php?userid='.$user->id.'"><img title="View the profile of '.$user->name.'" src="'.$img_url.'" alt="Profile"></a>';
     }
     $name = $user->name;
     if ($name_limit && strlen($name) > $name_limit) {
         $name = substr($name, 0, $name_limit)."...";
     }
-    $x .= sprintf(
-        '<a href="%s%s?userid=%d">%s</a>',
-        url_base(),
-        SHOW_USER_PAGE,
-        $user->id,
-        $name
-    );
+    $x .= " <a href=\"".url_base()."show_user.php?userid=".$user->id."\">".$name."</a>";
     if (function_exists("project_user_links")){
         $x .= project_user_links($user);
     }
@@ -458,8 +404,6 @@ function user_links($user, $badge_height=0, $name_limit=0) {
     return $name_limit?"<nobr>$x</nobr>":$x;
 }
 
-// show community links for the logged in user
-//
 function show_community_private($user) {
     show_badges_row(true, $user);
     if (!DISABLE_PROFILES) {
@@ -473,19 +417,9 @@ function show_community_private($user) {
     if (!DISABLE_FORUMS) {
         $tot = total_posts($user);
         if ($tot) {
-            if (is_banished($user)) {
-                row2(tra("Message boards"), tra('(banished)'));
-            } else {
-                row2(
-                    tra("Message boards"),
-                    sprintf(
-                        '<a href="%s/forum_user_posts.php?userid=%d">%s</a>',
-                        url_base(), $user->id, tra('%1 posts', $tot)
-                    )
-                );
+            row2(tra("Message boards"), "<a href=\"".url_base()."forum_user_posts.php?userid=$user->id\">".tra("%1 posts", $tot)."</a>");
             }
         }
-    }
 
     row2(tra("Private messages"), pm_notification($user).pm_email_remind($user));
 
@@ -536,41 +470,38 @@ function show_community_private($user) {
     }
 
     $friends = BoincFriend::enum("user_src=$user->id and reciprocated=1");
-    $x = [];
-    if ($friends) {
+    $x = "<a href=\"user_search.php\">".tra("Find friends")."</a><br/>\n";
+    $n = count($friends);
+    if ($n) {
         foreach($friends as $friend) {
             $fuser = BoincUser::lookup_id($friend->user_dest);
             if (!$fuser) continue;
-            $x[] = friend_links($fuser);
+            $x .= friend_links($fuser);
         }
-        row2(tra("Friends"), implode('<br>', $x));
+        row2(tra("Friends")." ($n)", $x);
     } else {
-        row2(tra("Friends"), '---');
+        row2(tra("Friends"), $x);
     }
-
-    if (is_admin($user)) {
-        row2('Special users', '<a href=user_permissions.php>Manage</a>');
     }
-}
 
 // show summary of dynamic and static info (public)
 //
 function show_user_summary_public($user) {
     global $g_logged_in_user;
-    if (!UNIQUE_USER_NAME) {
         row2(tra("User ID"), $user->id);
-    }
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
     if (USER_COUNTRY) {
         row2(tra("Country"), $user->country);
     }
-    if (USER_URL && $user->url) {
+    if (USER_URL) {
         // don't show URL if user has no recent credit (spam suppression)
         //
+        if (strlen($user->url)) {
         if (!NO_COMPUTING || $user->expavg_credit > 1) {
             $u = normalize_user_url($user->url);
             row2(tra("URL"), sprintf('<a href="%s">%s</a>', $u, $u));
         }
+    }
     }
     if (!NO_COMPUTING) {
         show_credit($user);
@@ -586,8 +517,9 @@ function show_user_summary_public($user) {
     }
 }
 
-// return an object with data to show the user's community links
-//
+// Returns a cacheable community links data object
+// @param user The user to produce a community links object for
+
 function get_community_links_object($user){
     $cache_object = new StdClass;
     $cache_object->post_count = total_posts($user);
@@ -604,14 +536,8 @@ function get_community_links_object($user){
     return $cache_object;
 }
 
-// show community links of another user (described by $clo)
-//
 function community_links($clo, $logged_in_user){
     $user = $clo->user;
-    if (!$user) {
-        error_log("community_links(): null user\n");
-        return;
-    }
     $team = $clo->team;
     $friends = $clo->friends;
     $tot = $clo->post_count;
@@ -620,26 +546,14 @@ function community_links($clo, $logged_in_user){
         if ($user->teamid && $team) {
             row2(tra("Team"), "<a href=\"".url_base()."team_display.php?teamid=$team->id\">$team->name</a>");
         } else {
-            row2(tra("Team"), '&mdash;');
+            row2(tra("Team"), tra("None"));
         }
     }
     if (!DISABLE_FORUMS) {
         if ($tot) {
-            $link = sprintf(
-                '<a href="%s/forum_user_posts.php?userid=%d">%s</a>',
-                url_base(), $user->id, tra("%1 posts", $tot)
-            );
-            if (is_banished($user)) {
-                if (is_moderator($logged_in_user)) {
-                    row2(tra("Message boards"), $link.' (banished)');
-                } else {
-                    row2(tra("Message boards"), tra('(banished)'));
+            row2(tra("Message boards"), "<a href=\"".url_base()."forum_user_posts.php?userid=$user->id\">".tra("%1 posts", $tot)."</a>");
                 }
-            } else {
-                row2(tra("Message boards"), $link);
             }
-        }
-    }
     if ($logged_in_user && $logged_in_user->id != $user->id) {
         row2(tra("Contact"), "<a href=\"pm.php?action=new&userid=".$user->id."\">".tra("Send private message")."</a>");
         $friend = BoincFriend::lookup($logged_in_user->id, $user->id);
@@ -655,11 +569,11 @@ function community_links($clo, $logged_in_user){
     }
 
     if ($friends) {
-        $x = [];
+        $x = "";
         foreach($friends as $friend) {
-            $x[] = friend_links($friend);
+            $x .= friend_links($friend);
         }
-        row2(tra('Friends'), implode('<br>', $x));
+        row2(tra("Friends")." (".sizeof($friends).")", $x);
     }
 }
 
@@ -673,27 +587,16 @@ function show_account_private($user) {
     grid(
         false,
         function() use ($user) {
-            panel(
-                tra("Account information"),
-                function() use ($user) {
                     start_table();
+            row1(tra("Account information"), 2, 'heading');
                     show_user_info_private($user);
-                    end_table();
-                }
-            );
-            if (!NO_COMPUTING || !NO_STATS || !NO_HOSTS) {
-                panel(
-                    tra("Computing"),
-                    function() use($user) {
-                        start_table();
+            show_preference_links();
                         show_user_stats_private($user);
-                        end_table();
-                    }
-                );
-            }
+
             if (function_exists('show_user_donations_private')) {
                 show_user_donations_private($user);
             }
+            end_table();
             if (!NO_COMPUTING) {
                 show_other_projects($user, true);
             }
@@ -702,26 +605,15 @@ function show_account_private($user) {
             }
         },
         function() use ($user) {
-            panel(
-                tra("Community"),
-                function() use ($user) {
                     start_table();
+            row1(tra("Community"));
                     show_community_private($user);
                     end_table();
                 }
             );
-            panel(
-                tra("Preferences"),
-                function() use($user) {
-                    start_table();
-                    show_preference_links();
-                    end_table();
                 }
-            );
-        }
-    );
-}
 
 
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>
