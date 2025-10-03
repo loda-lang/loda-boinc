@@ -171,13 +171,14 @@ function get_submitter_stats() {
     return $map;
 }
 
-$submitter_programs = get_submitter_stats();
-
 function show_credit($user) {
     row2(tra("Total credit"), format_credit_large($user->total_credit));
     row2(tra("Recent average credit"), format_credit($user->expavg_credit));
 
     $numPrograms = 0;
+    
+    global $submitter_programs;
+    if (!isset($submitter_programs)) $submitter_programs = get_submitter_stats();
     if (isset($user->name) && isset($submitter_programs[$user->name])) {
         $numPrograms = (int)$submitter_programs[$user->name];
     }

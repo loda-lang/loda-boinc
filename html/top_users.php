@@ -33,6 +33,7 @@ define ('ITEM_LIMIT', 10000);
 
 function get_top_participants($offset, $sort_by) {
     global $users_per_page, $submitter_programs;
+    if (!isset($submitter_programs)) $submitter_programs = get_submitter_stats();
     if ($sort_by == "mined_programs") {
         // Fetch users in batches to reduce memory usage
         $batch_size = 1000;
@@ -97,6 +98,7 @@ function user_table_start($sort_by) {
 
 function show_user_row($user, $i) {
     global $submitter_programs;
+    if (!isset($submitter_programs)) $submitter_programs = get_submitter_stats();
     $numPrograms = 0;
     if (isset($user->name) && isset($submitter_programs[$user->name])) {
         $numPrograms = (int)$submitter_programs[$user->name];
