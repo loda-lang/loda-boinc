@@ -54,7 +54,9 @@ set -e
 
 LODA_REL=$(curl -fsS https://api.github.com/repos/loda-lang/loda-cpp/releases/latest | jq -r .tag_name)
 LODA_URL="https://github.com/loda-lang/loda-cpp/releases/download/$LODA_REL"
-WRAPPER_URL="https://boinc.berkeley.edu/dl"
+
+WRAPPER_VERSION=26019
+WRAPPER_URL="https://github.com/BOINC/boinc/releases/download/wrapper%2F${WRAPPER_VERSION}"
 
 LV=${LODA_REL#v}
 APP_VERSION=$(printf "%02d%02d%02d" "$(echo $LV | cut -d. -f1)" "$(echo $LV | cut -d. -f2)" "$(echo $LV | cut -d. -f3)")
@@ -69,16 +71,8 @@ function fetch_loda {
 }
 
 function fetch_wrapper {
-  curl -fsSLO $WRAPPER_URL/wrapper_$1.zip
-  unzip -q -o wrapper_$1.zip
-  rm wrapper_$1.zip wrapper_$1.pdb 2> /dev/null || true
-  # linux arm64 wrapper is in a subfolder
-  if [ -d wrapper* ]; then
-    mv wrapper*/wrapper* tmp_wrapper
-    rm -r wrapper*
-    mv tmp_wrapper wrapper_$1
-    chmod oug+x wrapper_$1
-  fi
+  curl -fsSLO $WRAPPER_URL/$1
+  chmod oug+x $1
 }
 
 function make_version {
@@ -102,8 +96,12 @@ function make_version {
 
 echo
 echo "### PREPARE APP VERSIONS ###"
-make_version "windows_x86_64" "loda-windows.exe" "loda-$APP_VERSION-windows-x86.exe" "26016_windows_x86_64"
-make_version "x86_64-pc-linux-gnu" "loda-linux-x86" "loda-$APP_VERSION-linux-x86" "26015_x86_64-pc-linux-gnu"
-make_version "x86_64-apple-darwin" "loda-macos-x86" "loda-$APP_VERSION-macos-x86" "26017_universal-apple-darwin"
-make_version "arm64-apple-darwin" "loda-macos-arm64" "loda-$APP_VERSION-macos-arm64" "26017_universal-apple-darwin"
-make_version "aarch64-unknown-linux-gnu" "loda-linux-arm64" "loda-$APP_VERSION-linux-arm64" "linux_arm64_26018"
+
+make_version windows_x86_64 loda-windows-x86.exe "loda-$APP_VERSION-windows-x86.exe" "wrapper_${WRAPPER_VERSION}_windows_x86_x64.exe"
+make_version windows_arm64 loda-windows-arm64.exe "loda-$APP_VERSION-windows-arm64.exe" "wrapper_${WRAPPER_VERSION}_windows_ARM64.exe"
+
+make_version x86_64-pc-linux-gnu loda-linux-x86 "loda-$APP_VERSION-linux-x86" "wrapper_${WRAPPER_VERSION}_x86_64-pc-linux-gnu"
+make_version aarch64-unknown-linux-gnu loda-linux-arm64 "loda-$APP_VERSION-linux-arm64" "wrapper_${WRAPPER_VERSION}_arm64-pc-linux-gnu"
+
+make_version x86_64-apple-darwin loda-macos-x86 "loda-$APP_VERSION-macos-x86" "wrapper_${WRAPPER_VERSION}_universal-apple-darwin"
+make_version arm64-apple-darwin loda-macos-arm64 "loda-$APP_VERSION-macos-arm64" "wrapper_${WRAPPER_VERSION}_universal-apple-darwin"
