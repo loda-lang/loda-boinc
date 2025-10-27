@@ -7,6 +7,12 @@
 
 set -e
 
+SE_PATH="$(command -v sign_executable || true)"
+if [ -z "$SE_PATH" ] || [ ! -x "$SE_PATH" ]; then
+  echo "Error: 'sign_executable' is not installed or not executable."
+  exit 1
+fi
+
 pushd $HOME > /dev/null
 
 if [ ! -f keys/code_sign_private ]; then
