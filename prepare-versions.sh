@@ -93,11 +93,11 @@ function make_version {
   JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
   popd > /dev/null
   cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
-  cat version_template.xml \
-    | sed "s/WRAPPER_PHYSICAL_NAME/$WRAPPER/g" \
-    | sed "s/LODA_PHYSICAL_NAME/$3/g" \
-    | sed "s/JOB_PHYSICAL_NAME/$JOB_PHYSICAL/g" \
-    > "${VERSION_DIR}/version.xml"
+  sed -e "s/WRAPPER_PHYSICAL_NAME/$WRAPPER/g" \
+      -e "s/LODA_PHYSICAL_NAME/$3/g" \
+      -e "s/JOB_PHYSICAL_NAME/$JOB_PHYSICAL/g" \
+      -e "/DLL_FILES/d" \
+      version_template.xml > "${VERSION_DIR}/version.xml"
 }
 
 function make_windows_version {
@@ -112,40 +112,30 @@ function make_windows_version {
   fetch_wrapper $4
   WRAPPER=$(ls wrapper*)
   JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
-  popd > /dev/null
-  cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
-  # Generate version.xml with DLLs
-  cat > "${VERSION_DIR}/version.xml" << EOF
-<version>
-   <file>
-      <physical_name>$WRAPPER</physical_name>
-      <main_program/>
-   </file>
-   <file>
-      <physical_name>$LODA_PHYSICAL</physical_name>
-      <logical_name>loda</logical_name>
-   </file>
-EOF
-  # Add all DLLs to version.xml
+  # Build DLL file entries
+  DLL_ENTRIES=""
   shopt -s nullglob
-  for dll in "$VERSION_DIR"/*.dll; do
-    DLL_NAME=$(basename "$dll")
-    cat >> "${VERSION_DIR}/version.xml" << EOF
-   <file>
-      <physical_name>$DLL_NAME</physical_name>
+  for dll in *.dll; do
+    DLL_ENTRIES+="   <file>
+      <physical_name>$dll</physical_name>
    </file>
-EOF
+"
   done
   shopt -u nullglob
-  cat >> "${VERSION_DIR}/version.xml" << EOF
-   <file>
-      <physical_name>$JOB_PHYSICAL</physical_name>
-      <logical_name>job.xml</logical_name>
-   </file>
-   <needs_network/>
-   <is_wrapper/>
-</version>
-EOF
+  popd > /dev/null
+  cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
+  # Use awk for multiline replacement
+  awk -v wrapper="$WRAPPER" \
+      -v loda="$LODA_PHYSICAL" \
+      -v job="$JOB_PHYSICAL" \
+      -v dlls="$DLL_ENTRIES" \
+      '{
+        gsub(/WRAPPER_PHYSICAL_NAME/, wrapper);
+        gsub(/LODA_PHYSICAL_NAME/, loda);
+        gsub(/JOB_PHYSICAL_NAME/, job);
+        gsub(/DLL_FILES/, dlls);
+        print
+      }' version_template.xml > "${VERSION_DIR}/version.xml"
 }
 
 echo
