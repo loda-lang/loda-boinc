@@ -71,9 +71,9 @@ function fetch_loda {
 }
 
 function fetch_loda_zip {
-  curl -fsSLO $LODA_URL/$1
-  unzip -o $1
-  rm $1
+  curl -fsSLO "$LODA_URL/$1"
+  unzip -o "$1"
+  rm "$1"
 }
 
 function fetch_wrapper {
@@ -127,16 +127,16 @@ function make_windows_version {
    </file>
 EOF
   # Add all DLLs to version.xml
+  shopt -s nullglob
   for dll in "$VERSION_DIR"/*.dll; do
-    if [ -f "$dll" ]; then
-      DLL_NAME=$(basename "$dll")
-      cat >> "${VERSION_DIR}/version.xml" << EOF
+    DLL_NAME=$(basename "$dll")
+    cat >> "${VERSION_DIR}/version.xml" << EOF
    <file>
       <physical_name>$DLL_NAME</physical_name>
    </file>
 EOF
-    fi
   done
+  shopt -u nullglob
   cat >> "${VERSION_DIR}/version.xml" << EOF
    <file>
       <physical_name>$JOB_PHYSICAL</physical_name>
