@@ -70,6 +70,12 @@ function fetch_loda {
   chmod oug+x $2
 }
 
+function fetch_loda_zip {
+  curl -fsSLO $LODA_URL/$1
+  unzip -o $1
+  rm $1
+}
+
 function fetch_wrapper {
   curl -fsSLO $WRAPPER_URL/$1
   chmod oug+x $1
@@ -94,11 +100,59 @@ function make_version {
     > "${VERSION_DIR}/version.xml"
 }
 
+function make_windows_version {
+  VERSION_DIR="$APP_DIR/$1"
+  echo $VERSION_DIR
+  [ -d $VERSION_DIR ] && rm -r $VERSION_DIR
+  mkdir -p $VERSION_DIR
+  pushd $VERSION_DIR > /dev/null
+  fetch_loda_zip $2
+  LODA_PHYSICAL="loda-$APP_VERSION-$3.exe"
+  mv loda.exe $LODA_PHYSICAL
+  fetch_wrapper $4
+  WRAPPER=$(ls wrapper*)
+  JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
+  popd > /dev/null
+  cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
+  # Generate version.xml with DLLs
+  cat > "${VERSION_DIR}/version.xml" << EOF
+<version>
+   <file>
+      <physical_name>$WRAPPER</physical_name>
+      <main_program/>
+   </file>
+   <file>
+      <physical_name>$LODA_PHYSICAL</physical_name>
+      <logical_name>loda</logical_name>
+   </file>
+EOF
+  # Add all DLLs to version.xml
+  for dll in "$VERSION_DIR"/*.dll; do
+    if [ -f "$dll" ]; then
+      DLL_NAME=$(basename "$dll")
+      cat >> "${VERSION_DIR}/version.xml" << EOF
+   <file>
+      <physical_name>$DLL_NAME</physical_name>
+   </file>
+EOF
+    fi
+  done
+  cat >> "${VERSION_DIR}/version.xml" << EOF
+   <file>
+      <physical_name>$JOB_PHYSICAL</physical_name>
+      <logical_name>job.xml</logical_name>
+   </file>
+   <needs_network/>
+   <is_wrapper/>
+</version>
+EOF
+}
+
 echo
 echo "### PREPARE APP VERSIONS ###"
 
-make_version windows_x86_64 loda-windows-x86.exe "loda-$APP_VERSION-windows-x86.exe" "wrapper_${WRAPPER_VERSION}_windows_x86_x64.exe"
-make_version windows_arm64 loda-windows-arm64.exe "loda-$APP_VERSION-windows-arm64.exe" "wrapper_${WRAPPER_VERSION}_windows_ARM64.exe"
+make_windows_version windows_x86_64 loda-windows-x86.zip windows-x86 "wrapper_${WRAPPER_VERSION}_windows_x86_x64.exe"
+make_windows_version windows_arm64 loda-windows-arm64.zip windows-arm64 "wrapper_${WRAPPER_VERSION}_windows_ARM64.exe"
 
 make_version x86_64-pc-linux-gnu loda-linux-x86 "loda-$APP_VERSION-linux-x86" "wrapper_${WRAPPER_VERSION}_x86_64-pc-linux-gnu"
 make_version aarch64-unknown-linux-gnu loda-linux-arm64 "loda-$APP_VERSION-linux-arm64" "wrapper_${WRAPPER_VERSION}_arm64-pc-linux-gnu"
