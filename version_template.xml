@@ -7,6 +7,7 @@
       <physical_name>LODA_PHYSICAL_NAME</physical_name>
       <logical_name>loda</logical_name>
    </file>
+DLL_FILES
    <file>
       <physical_name>JOB_PHYSICAL_NAME</physical_name>
       <logical_name>job.xml</logical_name>

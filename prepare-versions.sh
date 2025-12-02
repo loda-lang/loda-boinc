@@ -70,6 +70,12 @@ function fetch_loda {
   chmod oug+x $2
 }
 
+function fetch_loda_zip {
+  curl -fsSLO "$LODA_URL/$1"
+  unzip -o "$1"
+  rm "$1"
+}
+
 function fetch_wrapper {
   curl -fsSLO $WRAPPER_URL/$1
   chmod oug+x $1
@@ -87,18 +93,56 @@ function make_version {
   JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
   popd > /dev/null
   cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
-  cat version_template.xml \
-    | sed "s/WRAPPER_PHYSICAL_NAME/$WRAPPER/g" \
-    | sed "s/LODA_PHYSICAL_NAME/$3/g" \
-    | sed "s/JOB_PHYSICAL_NAME/$JOB_PHYSICAL/g" \
-    > "${VERSION_DIR}/version.xml"
+  sed -e "s/WRAPPER_PHYSICAL_NAME/$WRAPPER/g" \
+      -e "s/LODA_PHYSICAL_NAME/$3/g" \
+      -e "s/JOB_PHYSICAL_NAME/$JOB_PHYSICAL/g" \
+      -e "/DLL_FILES/d" \
+      version_template.xml > "${VERSION_DIR}/version.xml"
+}
+
+function make_windows_version {
+  VERSION_DIR="$APP_DIR/$1"
+  echo $VERSION_DIR
+  [ -d $VERSION_DIR ] && rm -r $VERSION_DIR
+  mkdir -p $VERSION_DIR
+  pushd $VERSION_DIR > /dev/null
+  fetch_loda_zip $2
+  LODA_PHYSICAL="loda-$APP_VERSION-$3.exe"
+  mv loda.exe $LODA_PHYSICAL
+  fetch_wrapper $4
+  WRAPPER=$(ls wrapper*)
+  JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
+  # Build DLL file entries
+  DLL_ENTRIES=""
+  shopt -s nullglob
+  for dll in *.dll; do
+    DLL_ENTRIES+="   <file>
+      <physical_name>$dll</physical_name>
+   </file>
+"
+  done
+  shopt -u nullglob
+  popd > /dev/null
+  cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
+  # Use awk for multiline replacement
+  awk -v wrapper="$WRAPPER" \
+      -v loda="$LODA_PHYSICAL" \
+      -v job="$JOB_PHYSICAL" \
+      -v dlls="$DLL_ENTRIES" \
+      '{
+        gsub(/WRAPPER_PHYSICAL_NAME/, wrapper);
+        gsub(/LODA_PHYSICAL_NAME/, loda);
+        gsub(/JOB_PHYSICAL_NAME/, job);
+        gsub(/DLL_FILES/, dlls);
+        print
+      }' version_template.xml > "${VERSION_DIR}/version.xml"
 }
 
 echo
 echo "### PREPARE APP VERSIONS ###"
 
-make_version windows_x86_64 loda-windows-x86.exe "loda-$APP_VERSION-windows-x86.exe" "wrapper_${WRAPPER_VERSION}_windows_x86_x64.exe"
-make_version windows_arm64 loda-windows-arm64.exe "loda-$APP_VERSION-windows-arm64.exe" "wrapper_${WRAPPER_VERSION}_windows_ARM64.exe"
+make_windows_version windows_x86_64 loda-windows-x86.zip windows-x86 "wrapper_${WRAPPER_VERSION}_windows_x86_x64.exe"
+make_windows_version windows_arm64 loda-windows-arm64.zip windows-arm64 "wrapper_${WRAPPER_VERSION}_windows_ARM64.exe"
 
 make_version x86_64-pc-linux-gnu loda-linux-x86 "loda-$APP_VERSION-linux-x86" "wrapper_${WRAPPER_VERSION}_x86_64-pc-linux-gnu"
 make_version aarch64-unknown-linux-gnu loda-linux-arm64 "loda-$APP_VERSION-linux-arm64" "wrapper_${WRAPPER_VERSION}_arm64-pc-linux-gnu"
