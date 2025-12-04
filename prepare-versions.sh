@@ -112,30 +112,38 @@ function make_windows_version {
   fetch_wrapper $4
   WRAPPER=$(ls wrapper*)
   JOB_PHYSICAL="loda_job_${APP_VERSION}.xml"
-  # Build DLL file entries
-  DLL_ENTRIES=""
-  shopt -s nullglob
-  for dll in *.dll; do
-    DLL_ENTRIES+="   <file>
-      <physical_name>$dll</physical_name>
-   </file>
-"
-  done
-  shopt -u nullglob
   popd > /dev/null
   cp job.xml "${VERSION_DIR}/$JOB_PHYSICAL"
-  # Use awk for multiline replacement
-  awk -v wrapper="$WRAPPER" \
-      -v loda="$LODA_PHYSICAL" \
-      -v job="$JOB_PHYSICAL" \
-      -v dlls="$DLL_ENTRIES" \
-      '{
-        gsub(/WRAPPER_PHYSICAL_NAME/, wrapper);
-        gsub(/LODA_PHYSICAL_NAME/, loda);
-        gsub(/JOB_PHYSICAL_NAME/, job);
-        gsub(/DLL_FILES/, dlls);
-        print
-      }' version_template.xml > "${VERSION_DIR}/version.xml"
+  
+  # Replace placeholders in version.xml
+  sed -e "s/WRAPPER_PHYSICAL_NAME/$WRAPPER/g" \
+      -e "s/LODA_PHYSICAL_NAME/$LODA_PHYSICAL/g" \
+      -e "s/JOB_PHYSICAL_NAME/$JOB_PHYSICAL/g" \
+      version_template.xml > "${VERSION_DIR}/version.xml"
+  
+  # Insert DLL file entries if any exist
+  pushd $VERSION_DIR > /dev/null
+  shopt -s nullglob
+  DLL_FILES=(*.dll)
+  if [ ${#DLL_FILES[@]} -gt 0 ]; then
+    # Build temporary file with DLL entries
+    DLL_TEMP=$(mktemp)
+    for dll in "${DLL_FILES[@]}"; do
+      echo "   <file>" >> "$DLL_TEMP"
+      echo "      <physical_name>$dll</physical_name>" >> "$DLL_TEMP"
+      echo "   </file>" >> "$DLL_TEMP"
+    done
+    # Replace DLL_FILES marker with actual entries
+    sed -i.bak "/DLL_FILES/r $DLL_TEMP" version.xml
+    sed -i.bak "/DLL_FILES/d" version.xml
+    rm "$DLL_TEMP" version.xml.bak
+  else
+    # Just remove the DLL_FILES marker if no DLLs
+    sed -i.bak "/DLL_FILES/d" version.xml
+    rm version.xml.bak
+  fi
+  shopt -u nullglob
+  popd > /dev/null
 }
 
 echo
