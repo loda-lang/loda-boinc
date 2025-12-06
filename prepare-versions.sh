@@ -107,6 +107,19 @@ function make_windows_version {
   mkdir -p $VERSION_DIR
   pushd $VERSION_DIR > /dev/null
   fetch_loda_zip $2
+  # Rename DLLs to architecture-specific physical names to avoid BOINC download clashes
+  DLL_PHYS=()
+  DLL_LOGICAL=()
+  shopt -s nullglob
+  for dll in *.dll; do
+    orig_name="$dll"
+    base_name="${dll%.dll}"
+    renamed="${base_name}-$3.dll"
+    mv "$orig_name" "$renamed"
+    DLL_PHYS+=("$renamed")
+    DLL_LOGICAL+=("$orig_name")
+  done
+  shopt -u nullglob
   LODA_PHYSICAL="loda-$APP_VERSION-$3.exe"
   mv loda.exe $LODA_PHYSICAL
   fetch_wrapper $4
@@ -123,14 +136,15 @@ function make_windows_version {
   
   # Insert DLL file entries if any exist
   pushd $VERSION_DIR > /dev/null
-  shopt -s nullglob
-  DLL_FILES=(*.dll)
-  if [ ${#DLL_FILES[@]} -gt 0 ]; then
+  if [ ${#DLL_PHYS[@]} -gt 0 ]; then
     # Build temporary file with DLL entries
     DLL_TEMP=$(mktemp)
-    for dll in "${DLL_FILES[@]}"; do
+    for idx in "${!DLL_PHYS[@]}"; do
+      phys_name="${DLL_PHYS[$idx]}"
+      logical_name="${DLL_LOGICAL[$idx]}"
       echo "   <file>" >> "$DLL_TEMP"
-      echo "      <physical_name>$dll</physical_name>" >> "$DLL_TEMP"
+      echo "      <physical_name>$phys_name</physical_name>" >> "$DLL_TEMP"
+      echo "      <logical_name>$logical_name</logical_name>" >> "$DLL_TEMP"
       echo "   </file>" >> "$DLL_TEMP"
     done
     # Replace DLL_FILES marker with actual entries
@@ -142,7 +156,6 @@ function make_windows_version {
     sed -i.bak "/DLL_FILES/d" version.xml
     rm version.xml.bak
   fi
-  shopt -u nullglob
   popd > /dev/null
 }
 
