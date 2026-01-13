@@ -114,7 +114,7 @@ function make_windows_version {
   for dll in *.dll; do
     orig_name="$dll"
     base_name="${dll%.dll}"
-    renamed="${base_name}-$3.dll"
+    renamed="${base_name}-${APP_VERSION}-$3.dll"
     mv "$orig_name" "$renamed"
     DLL_PHYS+=("$renamed")
     DLL_LOGICAL+=("$orig_name")
