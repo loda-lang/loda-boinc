@@ -145,6 +145,7 @@ function make_windows_version {
       echo "   <file>" >> "$DLL_TEMP"
       echo "      <physical_name>$phys_name</physical_name>" >> "$DLL_TEMP"
       echo "      <logical_name>$logical_name</logical_name>" >> "$DLL_TEMP"
+      echo "      <copy_file/>" >> "$DLL_TEMP"
       echo "   </file>" >> "$DLL_TEMP"
     done
     # Replace DLL_FILES marker with actual entries
