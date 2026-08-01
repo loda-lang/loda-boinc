@@ -17,12 +17,14 @@ RUN apt update && \
     libapache2-mod-php \
     libcurl4-gnutls-dev \
     libssl-dev \
+    libzip-dev \
     logrotate \
     m4 \
     mc \
     make \
     mariadb-client \
     mariadb-server \
+    nlohmann-json-dev \
     openssl \
     php \
     php-cli \
