@@ -18,7 +18,7 @@ int validate_handler_init(int argc, char** argv) {
 void validate_handler_usage() {
 }
 
-int init_result(RESULT& result, void*& data) {
+int init_result(const RESULT& result, void*& data) {
     OUTPUT_FILE_INFO fi;
     auto retval = get_output_file_path(result, fi.path);
     if (retval) {
